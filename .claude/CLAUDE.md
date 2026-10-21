@@ -18,6 +18,7 @@ Claude가 새 세션에서 이어 작업할 때 읽는 프로젝트 기억 파�
   - 날짜 기반 자동 경고: `closedDays`(요일 휴무), `closedRanges`, `window`(기간 한정), `night`(월령 계산)
   - 알림 `alerts[].from/to`가 여행 기간과 겹치면 강조
 - `data.js` REGIONS 6개, 각 4일, item.tip { hours, closed, cautions, notes, map(구글 지도 검색어), links, verified }
+- `memos.js` 타임라인 메모(할 수 있는 것 2~3줄): MEMOS['지역id:제목'] 또는 MEMOS['제목'], 출국·귀국·공항버스는 PATTERN_MEMOS. 일정 제목을 바꾸면 메모 키도 같이 바꿀 것
 - 기간 프리셋: 중순 11/12(목)~15(일), 하순 11/26(목)~29(일) (기본값 하순, 사용자 확정 2026-10-21). 두 기간 모두 목~일
 - 항공: 인천공항 기준, 출국은 가장 이른 편, 귀국은 인천 20:00 이전 도착 (마들역 공항버스 6101, 공항 출발 막차 21:10) — data.js `F` 객체, Day1 첫 항목/Day4 마지막 항목과 연동
 - 숙소: region.stays[] 추천 위치 패널

@@ -14,6 +14,7 @@
 ## 파일
 - `index.html` / `style.css` / `app.js` — 빌드 없는 정적 웹앱 (GitHub Pages)
 - `data.js` — 지역·일정·TIP 데이터 (`REGIONS`, `COMMON_NOTES`, `CHECKED_AT`)
+- `memos.js` — 일정별 "할 수 있는 것" 메모
 
 사용자 상태(여행 기간, 체크, 내 일정)는 브라우저 `localStorage`에 저장되며 상단 "초기화"로 되돌립니다.
 정보 확인일은 `data.js`의 `CHECKED_AT`이며, `verified: true` 항목만 웹 검색으로 확인한 정보입니다.

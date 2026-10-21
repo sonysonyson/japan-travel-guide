@@ -228,6 +228,11 @@ button { cursor: pointer; }
 .tag.moon { --cat: #6c63c8; }
 .card h4 { margin: 0; font-size: 15.5px; letter-spacing: -0.02em; word-break: keep-all; overflow-wrap: anywhere; }
 .card p.desc { margin: 3px 0 0; font-size: 13.5px; color: var(--text-2); word-break: keep-all; overflow-wrap: anywhere; }
+.memo-list { list-style: none; margin: 8px 0 0; padding: 9px 12px; border-radius: 12px; background: color-mix(in srgb, var(--cat) 7%, var(--surface-2)); display: grid; gap: 3px; }
+.memo-list li { position: relative; padding-left: 14px; font-size: 13px; color: var(--text); line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
+.memo-list li::before { content: ""; position: absolute; left: 2px; top: .6em; width: 5px; height: 5px; border-radius: 50%; background: var(--cat); opacity: .7; }
+.card.done .memo-list { opacity: .7; }
+.tip-row.memo { background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)); }
 .card-actions { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
 .tip-btn { display: inline-flex; align-items: center; gap: 5px; border: 0; background: var(--text); color: var(--bg); font-size: 12px; font-weight: 800; padding: 5px 11px; border-radius: 999px; letter-spacing: .02em; }
 .tip-btn:hover { opacity: .88; }

@@ -300,6 +300,7 @@
               </div>
               <h4>${esc(it.title)}</h4>
               ${it.desc ? `<p class="desc">${esc(it.desc)}</p>` : ''}
+              ${it.memo ? `<ul class="memo-list" aria-label="할 수 있는 것">${it.memo.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
             </div>
             <input type="checkbox" class="check" data-act="done" ${done ? 'checked' : ''} aria-label="다녀옴 체크">
           </div>
@@ -346,6 +347,8 @@
     const { flags } = itemFlags(it, date);
     const t = to12h(it.time);
     const rows = [];
+    if (it.desc) rows.push(['한 줄 소개', `<p>${esc(it.desc)}</p>`]);
+    if (it.memo) rows.push(['이곳에서 할 수 있는 것', `<ul>${it.memo.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`, 'memo']);
     if (tip.hours) rows.push(['영업 시간', `<p>${esc(tip.hours)}</p>`]);
     if (tip.closed) rows.push(['휴무일', `<p>${esc(tip.closed)}</p>`]);
     if (tip.cautions && tip.cautions.length) rows.push(['주의할 점', `<ul>${tip.cautions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`, 'warn']);
