@@ -15,6 +15,12 @@
 - `index.html` / `style.css` / `app.js` — 빌드 없는 정적 웹앱 (GitHub Pages)
 - `data.js` — 지역·일정·TIP 데이터 (`REGIONS`, `COMMON_NOTES`, `CHECKED_AT`)
 - `memos.js` — 일정별 "할 수 있는 것" 메모
+- `sync.js` — 공유 데이터 읽기/쓰기 (GitHub API)
 
-사용자 상태(여행 기간, 체크, 내 일정)는 브라우저 `localStorage`에 저장되며 상단 "초기화"로 되돌립니다.
+## 공유 데이터 (모든 기기에서 같은 내용)
+- 여행 기간·코스 선택·체크·내 일정·일정/TIP 수정·삭제는 이 저장소의 `travel-data` 브랜치 `data/state.json`에 저장됩니다 (`sync.js`).
+- 보기: 누구나, 어느 기기에서나 최신 공유 데이터.
+- 수정: 상단 동기화 버튼에서 GitHub Fine-grained 토큰(이 저장소만, Contents: Read and write)을 입력한 기기만.
+- 상단 "초기화"는 공유 데이터를 원래 데이터로 되돌립니다 (토큰 필요).
+- 브라우저 `localStorage`는 오프라인 대비 캐시입니다.
 정보 확인일은 `data.js`의 `CHECKED_AT`이며, `verified: true` 항목만 웹 검색으로 확인한 정보입니다.

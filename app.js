@@ -22,9 +22,21 @@
     } catch (e) { /* 저장소 사용 불가 */ }
     return DEFAULT_STATE();
   }
-  function save() {
+  /* 이 기기 캐시 (공유 데이터를 못 불러올 때 대비) */
+  function cache() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* noop */ }
   }
+  /* 저장: 캐시 + 공유 저장소로 전송. 토큰이 없는 기기는 공유되지 않음을 한 번 알림 */
+  let warnedReadonly = false;
+  function save() {
+    cache();
+    if (Sync.push(state)) return;
+    if (!warnedReadonly) {
+      warnedReadonly = true;
+      setTimeout(() => toast('보기 전용 기기라 변경이 공유되지 않아요. 새로고침하면 공유 데이터로 돌아갑니다.', { label: '토큰 연결', run: () => openSyncDialog() }), 2100);
+    }
+  }
+  const isDefault = (s) => JSON.stringify({ ...DEFAULT_STATE(), ...s }) === JSON.stringify(DEFAULT_STATE());
 
   /* ───────── 유틸 ───────── */
   const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -104,13 +116,13 @@
   }
 
   /* ───────── 라우팅 ───────── */
-  function route() {
+  function route(keepScroll) {
     const m = location.hash.match(/^#\/r\/([\w-]+)/);
     const r = m && region(m[1]);
     if (r) renderDetail(r); else renderMain();
-    window.scrollTo({ top: 0 });
+    if (!keepScroll) window.scrollTo({ top: 0 });
   }
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', () => route());
 
   /* ───────── 메인 ───────── */
   function periodBox() {
@@ -584,10 +596,82 @@
 
   $('#btnSummary').addEventListener('click', openSummary);
   $('#btnReset').addEventListener('click', () => {
-    if (!confirm('여행 기간·체크·내 일정을 모두 지우고 기본 샘플로 되돌릴까요?')) return;
+    if (!Sync.token()) { openSyncDialog('초기화는 모든 기기의 공유 데이터를 원래대로 되돌리는 작업이라, 토큰이 연결된 기기에서만 할 수 있어요.'); return; }
+    if (!confirm('공유 데이터(여행 기간·코스 선택·체크·내 일정·수정·삭제)를 모두 지우고 원래 데이터로 되돌릴까요? 모든 기기에 반영됩니다.')) return;
     state = DEFAULT_STATE();
     ui.dayByRegion = {};
-    save(); route(); toast('기본 샘플 데이터로 초기화했습니다.');
+    save(); route(); toast('원래 데이터로 초기화했습니다. 모든 기기에 반영됩니다.');
+  });
+
+  /* ───────── 공유 데이터 동기화 ───────── */
+  const SYNC_LABEL = {
+    idle: ['☁', '공유'], loading: ['⟳', '불러오는 중'], readonly: ['👁', '보기 전용'], pending: ['…', '저장 대기'],
+    saving: ['⟳', '저장 중'], synced: ['✓', '공유 저장됨'], error: ['!', '저장 오류'], offline: ['!', '연결 안 됨'],
+  };
+  function renderSyncBtn(st, msg) {
+    const [ic, label] = SYNC_LABEL[st] || SYNC_LABEL.idle;
+    const b = $('#btnSync');
+    b.dataset.state = st;
+    b.innerHTML = `<span class="sync-ic" aria-hidden="true">${ic}</span><span class="sync-label">${label}</span>`;
+    b.title = msg || label;
+    b.setAttribute('aria-label', `공유 데이터: ${label}`);
+    if (st === 'error') toast(msg || '저장에 실패했습니다.', { label: '자세히', run: () => openSyncDialog(msg) });
+  }
+  Sync.on(renderSyncBtn);
+
+  async function pullShared(silent) {
+    try {
+      const remote = await Sync.pull();
+      if (remote) state = { ...DEFAULT_STATE(), ...remote };
+      else if (Sync.token() && !isDefault(state)) Sync.push(state, 0); // 공유 파일이 없으면 이 기기 데이터로 처음 생성
+      else state = DEFAULT_STATE();
+      cache();
+      route(true);
+    } catch (e) {
+      if (!silent) toast('공유 데이터를 불러오지 못해 이 기기에 저장된 내용을 보여줍니다.');
+    }
+  }
+
+  function openSyncDialog(reason) {
+    const C = Sync.CONF;
+    const [, label] = SYNC_LABEL[Sync.status] || SYNC_LABEL.idle;
+    const has = !!Sync.token();
+    openLayer('공유 데이터 · 동기화', `
+      ${reason ? `<div class="note warn" style="margin-bottom:12px"><span class="ic">⚠️</span><span>${esc(reason)}</span></div>` : ''}
+      <div class="tip-grid">
+        <div class="tip-row"><h5>현재 상태</h5>
+          <p>${esc(label)} · ${has ? '이 기기는 <b>수정 가능</b>' : '이 기기는 <b>보기 전용</b>'}</p>
+          <p class="muted" style="margin-top:4px">저장 위치: <a href="${Sync.fileUrl}" target="_blank" rel="noopener">${esc(C.owner)}/${esc(C.repo)} · ${esc(C.branch)} 브랜치 · ${esc(C.path)}</a></p>
+        </div>
+        <div class="tip-row"><h5>어떻게 동작하나요</h5><ul>
+          <li>수정·삭제·내 일정·체크·여행 기간·코스 선택은 GitHub 저장소에 저장되어 <b>모든 기기에서 같은 내용</b>으로 보입니다.</li>
+          <li>쿠키·사이트 데이터를 지워도 공유 데이터는 그대로입니다. 수정하려면 토큰만 다시 입력하세요.</li>
+          <li>상단 "초기화"는 공유 데이터를 원래 데이터로 되돌립니다.</li>
+        </ul></div>
+        <div class="tip-row memo"><h5>${has ? '토큰 바꾸기' : '이 기기에서 수정하려면: GitHub 토큰 연결'}</h5><ol class="steps">
+          <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub 토큰 만들기 페이지</a> 열기 (Settings → Developer settings → Fine-grained tokens)</li>
+          <li>Repository access: <b>Only select repositories</b> → <b>${esc(C.repo)}</b></li>
+          <li>Permissions → Repository permissions → <b>Contents: Read and write</b></li>
+          <li>만료일(Expiration)을 여행 이후로 정하고 Generate → 토큰을 복사해 아래에 붙여넣기</li>
+        </ol>
+        <form id="tokenForm" class="token-form" novalidate>
+          <input type="password" id="tokenInput" placeholder="github_pat_..." autocomplete="off" spellcheck="false" aria-label="GitHub 토큰">
+          <button type="submit" class="btn primary">연결</button>
+        </form>
+        <p class="err hidden" id="tokenErr"></p></div>
+      </div>
+      <p class="muted" style="margin-top:12px">⚠ 토큰은 이 브라우저에만 저장됩니다. 공용 PC에서는 쓰지 마세요. 토큰이 있으면 저장소 코드도 바꿀 수 있으니, 함께 수정할 믿을 수 있는 사람에게만 따로 전달하세요.</p>
+      <div class="edit-actions">
+        ${has ? '<button type="button" class="btn ghost" data-token-clear>이 기기에서 토큰 해제</button>' : ''}
+        <span class="grow"></span>
+        <button type="button" class="btn line" data-sync-pull>지금 다시 불러오기</button>
+      </div>`);
+  }
+
+  $('#btnSync').addEventListener('click', () => openSyncDialog());
+  document.addEventListener('visibilitychange', () => {
+    // 다른 기기에서 바꾼 내용을 탭으로 돌아올 때 반영 (편집 중이 아닐 때만)
+    if (document.visibilityState === 'visible' && !Sync.busy && Date.now() - Sync.lastPull > 30000 && $('#layer').classList.contains('hidden')) pullShared(true);
   });
   $('#layerClose').addEventListener('click', closeLayer);
   $('#layer').addEventListener('click', (e) => {
@@ -602,6 +686,13 @@
       save(); closeLayer(); renderDetail(r); toast('원래 일정으로 되돌렸습니다.');
       return;
     }
+    if (e.target.closest('[data-token-clear]')) {
+      Sync.setToken('');
+      renderSyncBtn('readonly');
+      closeLayer(); toast('이 기기에서 토큰을 해제했습니다. 보기 전용으로 바뀝니다.');
+      return;
+    }
+    if (e.target.closest('[data-sync-pull]')) { closeLayer(); pullShared().then(() => toast('공유 데이터를 다시 불러왔습니다.')); return; }
     if (e.target.closest('[data-tip-edit]')) { openEditor(r, findItem(r, ui.ctx.id), true); return; }
     if (e.target.closest('[data-tip-del]')) { removeTip(); return; }
     const one = e.target.closest('[data-restore]');
@@ -613,10 +704,23 @@
       toast('일정을 복원했습니다.');
     }
   });
-  $('#layer').addEventListener('submit', (e) => {
-    if (e.target.id !== 'editForm') return;
+  $('#layer').addEventListener('submit', async (e) => {
+    if (e.target.id === 'editForm') { e.preventDefault(); saveEditor(); return; }
+    if (e.target.id !== 'tokenForm') return;
     e.preventDefault();
-    saveEditor();
+    const t = $('#tokenInput').value.trim();
+    const err = $('#tokenErr');
+    if (!t) { err.textContent = '토큰을 붙여넣어 주세요.'; err.classList.remove('hidden'); return; }
+    err.textContent = '확인 중…'; err.classList.remove('hidden');
+    try {
+      await Sync.verify(t);
+      Sync.setToken(t);
+      closeLayer();
+      toast('토큰을 연결했습니다. 이제 이 기기의 수정이 모든 기기에 공유됩니다.');
+      await pullShared();
+    } catch (ex) {
+      err.textContent = ex.message;
+    }
   });
   $('#layer').addEventListener('input', (e) => {
     if (e.target.id === 'eTitle' && e.target.value.trim()) { $('#eErr').classList.add('hidden'); e.target.classList.remove('invalid'); }
@@ -638,4 +742,6 @@
 
   $('#checkedAt').textContent = CHECKED_AT;
   route();
+  renderSyncBtn(Sync.token() ? 'idle' : 'readonly');
+  pullShared();
 })();

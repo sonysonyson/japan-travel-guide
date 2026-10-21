@@ -307,6 +307,20 @@ button { cursor: pointer; }
 .hidden-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
 .toast-act { margin-left: 10px; border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 8px; padding: 4px 10px; font-weight: 700; font-size: 12.5px; }
 
+/* Sync */
+.sync-btn { display: inline-flex; align-items: center; gap: 6px; }
+.sync-btn .sync-ic { font-weight: 800; }
+.sync-btn[data-state="synced"] { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.sync-btn[data-state="readonly"] { color: var(--text-2); }
+.sync-btn[data-state="pending"], .sync-btn[data-state="saving"], .sync-btn[data-state="loading"] { color: var(--accent); }
+.sync-btn[data-state="error"], .sync-btn[data-state="offline"] { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: var(--warn-bg); }
+.steps { margin: 4px 0 10px; padding-left: 20px; font-size: 13.5px; }
+.steps li + li { margin-top: 4px; }
+.steps a, .tip-row a { color: var(--accent); font-weight: 700; }
+.token-form { display: flex; gap: 8px; }
+.token-form input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 9px 11px; outline: none; font-size: 14px; }
+.token-form input:focus { border-color: var(--accent); }
+
 /* Layer popup */
 .layer { position: fixed; inset: 0; z-index: 50; background: rgba(30, 22, 18, .42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; animation: fade .18s ease; }
 .layer-card { width: min(560px, 100%); max-height: 86vh; background: var(--surface); border-radius: 26px; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.25); animation: pop .22s cubic-bezier(.2,.9,.3,1.2); }
@@ -357,6 +371,7 @@ button { cursor: pointer; }
   .hero { padding-top: 28px; }
   .brand-text small { display: none; }
   .top-actions .btn { padding: 7px 11px; font-size: 12.5px; }
+  .sync-btn .sync-label { display: none; }
   .d-hero { padding: 20px; border-radius: 22px; }
   .d-hero .emoji { font-size: 60px; right: 12px; }
   .d-hero p { padding-right: 0; }

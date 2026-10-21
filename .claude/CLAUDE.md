@@ -17,6 +17,13 @@ Claude가 새 세션에서 이어 작업할 때 읽는 프로젝트 기억 파�
 - `app.js` 해시 라우팅(`#/`, `#/r/{id}`), 상태 `jp-nov-guide-v2` = { startDate, done, custom, dayOpt, edits, hidden }
   - 일정 수정·삭제: 기본 일정은 원본 유지, state.edits[id](time/title/category/desc/memo/tip, tipRemoved)로 덮어쓰기, 삭제는 state.hidden[id] (복원 가능). 내 일정은 custom 레코드 직접 수정
   - TIP 팝업 하단 "TIP 수정/삭제", TIP 삭제 시 카드에 "+ TIP"
+- 공유 데이터(2026-10-21 사용자 결정: GitHub 저장소 JSON): `sync.js`
+  - 저장 위치 sonysonyson/japan-travel-guide · `travel-data` 브랜치 · `data/state.json` (main 아님 → Pages 재배포 없음)
+  - state 전체(startDate, done, custom, dayOpt, edits, hidden)가 공유 대상, localStorage는 캐시일 뿐. 원격이 기준
+  - 읽기는 토큰 없이, 쓰기는 Fine-grained PAT(Contents read/write, 이 저장소만)를 기기마다 입력 (`jp-nov-gh-token`)
+  - 사용자는 '누구나 수정'을 원했으나 공개 페이지에 토큰을 넣으면 저장소 변조 위험 → 토큰을 믿을 수 있는 사람에게 전달하는 방식으로 합의 필요
+  - 초기화 = 공유 데이터를 DEFAULT_STATE로 덮어쓰기 (토큰 필요)
+  - 저장소 이름은 japan-travel-guide로 변경됨 (origin URL도 갱신)
   - 날짜 기반 자동 경고: `closedDays`(요일 휴무), `closedRanges`, `window`(기간 한정), `night`(월령 계산)
   - 알림 `alerts[].from/to`가 여행 기간과 겹치면 강조
 - `data.js` REGIONS 6개, 각 4일, item.tip { hours, closed, cautions, notes, map(구글 지도 검색어), links, verified }
@@ -50,7 +57,7 @@ Claude가 새 세션에서 이어 작업할 때 읽는 프로젝트 기억 파�
 - 가와고에: 기타인 국화 축제 11/1~11/23, 단풍 11월 하순~12월 상순
 
 ## 남은 할 일
-- [ ] GitHub 저장소 `japan-travel-guide`는 사용자가 생성함(2026-10-21) → origin이 `japn-travel-guide`(a 누락)로 연결되어 있음 — 실제 저장소 이름 확인 필요, Pages: main / (root)
+- [x] GitHub 저장소 japan-travel-guide, Pages https://sonysonyson.github.io/japan-travel-guide/ (main / root)
 - [ ] `code_artifact.md`를 저장소에 포함할지 결정 (현재 .gitignore 제외)
 - [ ] 사용자 검토 의견 반영
 
