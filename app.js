@@ -364,7 +364,7 @@
         <a class="btn primary" href="${GM(tip.map || it.title)}" target="_blank" rel="noopener">구글 지도에서 보기 ↗</a>
         ${(tip.links || []).map(([l, u]) => `<a class="btn line" href="${u}" target="_blank" rel="noopener">${esc(l)} ↗</a>`).join('')}
       </div>
-      <div class="verify ${tip.verified ? 'ok' : 'check'}">${tip.verified ? `✓ ${CHECKED_AT} 기준 웹 검색으로 확인한 정보입니다.` : 'ⓘ 영업시간·휴무는 방문 전 공식 정보를 확인하세요.'}</div>`);
+      <div class="verify ${tip.verified ? 'verify-ok' : 'verify-todo'}">${tip.verified ? `✓ ${CHECKED_AT} 기준 웹 검색으로 확인한 정보입니다.` : 'ⓘ 영업시간·휴무는 방문 전 공식 정보를 확인하세요.'}</div>`);
   }
 
   function openSummary() {
