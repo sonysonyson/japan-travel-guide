@@ -42,11 +42,11 @@ const GM = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURICo
 
 /* 공통 아이템 헬퍼: 출국·귀국·공항버스 */
 const flightOut = (f, dest, map) => ({
-  time: f.dep, category: 'MOVE', title: `인천공항 출발 → ${dest}`, desc: `${f.airline} ${f.code} · ${f.dep} 출발 → ${f.arr} 도착 (예시)`,
+  time: f.dep, category: 'MOVE', title: `인천공항 출발 → ${dest}`, desc: `${[f.airline, f.code].filter(Boolean).join(' ')} · ${f.dep} 출발 → ${f.arr} 도착${f.verified ? '' : ' (예시)'}`,
   tip: { cautions: ['2026 동계 시간표는 예약 시 다시 확인', '출발 2시간 전 인천공항 도착'], notes: f.notes || [], map: '인천국제공항', verified: !!f.verified },
 });
 const flightBack = (f, from, map) => ({
-  time: f.dep, category: 'MOVE', title: `${from} 출발 → 인천공항`, desc: `${f.airline} ${f.code} · ${f.dep} 출발 → 인천 ${f.arr} 도착 (예시)`,
+  time: f.dep, category: 'MOVE', title: `${from} 출발 → 인천공항`, desc: `${[f.airline, f.code].filter(Boolean).join(' ')} · ${f.dep} 출발 → 인천 ${f.arr} 도착${f.verified ? '' : ' (예시)'}`,
   tip: { cautions: ['2026 동계 시간표는 예약 시 다시 확인', '면세품은 수하물 위탁 전에 세관 키오스크 확인'], notes: f.notes || [], map, verified: !!f.verified },
 });
 const busHome = (time) => ({
@@ -64,12 +64,12 @@ const F = {
     back: { airline: '제주항공', code: '7C', dep: '16:45', arr: '19:05', notes: ['아시아나 18:15 출발편은 인천 20:35 도착이라 제외'] },
   },
   miyako: {
-    out: { airline: '진에어', code: 'LJ357', dep: '08:25', arr: '11:00', notes: ['시모지시마 공항(SHI) 도착', '운항 요일이 자료마다 다름(월·수·금·토·일 기사 있음) — 목요일 출발편 확인 필수'] },
-    back: { airline: '진에어', code: 'LJ358', dep: '12:00', arr: '오후', notes: ['인천 도착 시각은 자료마다 14:45~15:45로 차이'] },
+    out: { airline: '진에어', code: '', dep: '08:15', arr: '10:50', verified: true, notes: ['매일 운항 (주 7회)', '시모지시마 공항(SHI) 도착', '사용자 확인 정보 (2026-10-21)'] },
+    back: { airline: '진에어', code: '', dep: '12:00', arr: '14:35', verified: true, notes: ['매일 운항 (주 7회)', '사용자 확인 정보 (2026-10-21)'] },
   },
   ishigaki: {
-    out: { airline: '진에어', code: 'LJ361', dep: '09:05', arr: '12:00', notes: ['월·화·목·금·일 운항 (수·토 미운항, 2026년 9월 기준 자료)', '09:50 출발로 적힌 이전 자료도 있음'] },
-    back: { airline: '진에어', code: 'LJ362', dep: '13:00', arr: '15:30', notes: ['월·화·목·금·일 운항'] },
+    out: { airline: '진에어', code: '', dep: '09:45', arr: '12:30', verified: true, notes: ['주 5회 운항 — 목요일 출발 가능', '사용자 확인 정보 (2026-10-21)'] },
+    back: { airline: '진에어', code: '', dep: '13:30', arr: '16:10', verified: true, notes: ['주 5회 운항 — 일요일 귀국 가능', '사용자 확인 정보 (2026-10-21)'] },
   },
   tokyo: {
     out: { airline: 'LCC', code: '나리타행', dep: '07:30', arr: '09:35', notes: ['인천→나리타 오전 7시대 LCC 운항 기록 기준 예시', '하네다행은 도심이 가깝지만 이른 시간 편이 적음'] },
@@ -251,17 +251,16 @@ const REGIONS = [
       { nights: '대안 · 마지막 1박', area: '이라부섬 · 시모지섬', why: '귀국편 공항(시모지시마)과 가까워 Day 4 아침 여유', tips: ['식당이 적어 저녁은 미리 계획'], map: '伊良部島 ホテル' },
     ],
     access: [
-      '진에어 인천 ↔ 시모지시마(SHI) 직항. 운항 요일이 자료마다 달라 목요일 출발 가능 여부 확인이 필요합니다.',
-      '대안: 나하 경유 국내선으로 미야코 공항(MMY).',
+      '진에어 인천 ↔ 시모지시마(SHI) 직항, 매일 운항.',
       '섬 내 대중교통이 적어 렌터카 필수.',
     ],
     alerts: [
-      { level: 'warn', text: '진에어 인천→미야코편이 월·수·금·토·일 운항이라는 기사가 있어, 목요일(11/12·11/26) 출발편이 없을 수 있습니다. 예약 전 운항일 확인 — 없으면 나하 경유.', link: ['시모지시마 공항', 'https://shimojishima.jp/'] },
+      { level: 'info', text: '시모지시마 공항은 이라부섬 옆 시모지섬에 있습니다. 히라라 시내에서 차로 약 25~30분.' },
     ],
     days: [
       { title: '출국 · 이라부와 시모지', area: '이라부섬 / 시모지섬', items: [
         flightOut(F.miyako.out, '미야코(시모지시마)'),
-        { time: '11:00', category: 'MOVE', title: '시모지시마 공항 도착 · 렌터카', desc: '', tip: { map: 'みやこ下地島空港' } },
+        { time: '10:50', category: 'MOVE', title: '시모지시마 공항 도착 · 렌터카', desc: '', tip: { map: 'みやこ下地島空港' } },
         { time: '11:30', category: 'TOUR', title: '17END', desc: '활주로 끝 투명한 바다, 간조 때 드러나는 모래톱',
           tip: { cautions: ['출입 제한 구역·안내 표지 준수', '모래톱은 간조 때만 — 물때표 확인'], map: '17END 下地島' } },
         { time: '12:30', category: 'FOOD', title: '미야코 소바 점심', desc: '고기를 면 아래 숨겨 담는 미야코식', tip: { map: '伊良部島 宮古そば' } },
@@ -295,7 +294,7 @@ const REGIONS = [
         { time: '09:30', category: 'MOVE', title: '렌터카 반납', desc: '', tip: { map: 'みやこ下地島空港' } },
         { time: '10:00', category: 'MOVE', title: '시모지시마 공항 수속', desc: '출발 2시간 전', tip: { map: 'みやこ下地島空港' } },
         flightBack(F.miyako.back, '미야코(시모지시마)', 'みやこ下地島空港'),
-        busHome('16:30'),
+        busHome('15:20'),
       ] },
     ],
   },
@@ -322,8 +321,8 @@ const REGIONS = [
     days: [
       { title: '출국 · 시내와 석양', area: '이시가키 시내', items: [
         flightOut(F.ishigaki.out, '이시가키'),
-        { time: '12:00', category: 'MOVE', title: '이시가키 공항 도착 · 렌터카', desc: '', tip: { map: '南ぬ島石垣空港' } },
-        { time: '13:30', category: 'FOOD', title: '야에야마 소바 점심', desc: '', tip: { map: '石垣島 八重山そば' } },
+        { time: '12:30', category: 'MOVE', title: '이시가키 공항 도착 · 렌터카', desc: '', tip: { map: '南ぬ島石垣空港' } },
+        { time: '13:45', category: 'FOOD', title: '야에야마 소바 점심', desc: '', tip: { map: '石垣島 八重山そば' } },
         { time: '15:00', category: 'TOUR', title: '유글레나몰 · 공설시장', desc: '', tip: { map: 'ユーグレナモール' } },
         { time: '16:30', category: 'TOUR', title: '바나 공원 전망대', desc: '', tip: { map: 'バンナ公園' } },
         { time: '17:30', category: 'TOUR', title: '칸논자키 석양', desc: '', tip: { notes: ['일몰 약 17:55'], map: '観音崎 石垣島' } },
@@ -351,11 +350,11 @@ const REGIONS = [
       ] },
       { title: '해변 산책 → 귀국', area: '시라호 / 공항', items: [
         { time: '08:00', category: 'FOOD', title: '야에야마 소바 아침', desc: '', tip: { cautions: ['오전 영업·품절 확인'], map: '来夏世 石垣' } },
-        { time: '09:15', category: 'TOUR', title: '시라호 해변', desc: '공항 근처 조용한 산호 해변', tip: { map: '白保海岸' } },
-        { time: '10:15', category: 'MOVE', title: '렌터카 반납', desc: '', tip: { map: '南ぬ島石垣空港' } },
-        { time: '11:00', category: 'MOVE', title: '이시가키 공항 수속', desc: '출발 2시간 전 · 면세 세관 확인', tip: { map: '南ぬ島石垣空港' } },
+        { time: '09:30', category: 'TOUR', title: '시라호 해변', desc: '공항 근처 조용한 산호 해변', tip: { map: '白保海岸' } },
+        { time: '10:45', category: 'MOVE', title: '렌터카 반납', desc: '', tip: { map: '南ぬ島石垣空港' } },
+        { time: '11:30', category: 'MOVE', title: '이시가키 공항 수속', desc: '출발 2시간 전 · 면세 세관 확인', tip: { map: '南ぬ島石垣空港' } },
         flightBack(F.ishigaki.back, '이시가키', '南ぬ島石垣空港'),
-        busHome('16:20'),
+        busHome('17:00'),
       ] },
     ],
   },
