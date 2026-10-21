@@ -282,10 +282,10 @@ const REGIONS = [
 
   /* ───────────────────────── 도쿄 ───────────────────────── */
   {
-    id: 'tokyo', name: '도쿄', sub: '시부야 · 신주쿠 · 아사쿠사', nameJa: '東京', group: '도쿄', emoji: '🍂',
+    id: 'tokyo', name: '도쿄', sub: '시부야 · 신주쿠 · 근교 당일치기', nameJa: '東京', group: '도쿄', emoji: '🍂',
     color: 'butter',
-    tagline: '은행나무 길과 정원 단풍, 도시의 늦가을',
-    highlights: ['신궁 외원 은행나무 길', '리쿠기엔 야간 단풍 (11/25~)', '시부야 스카이 석양'],
+    tagline: '은행나무 길과 정원 단풍, 하루는 근교 소도시로',
+    highlights: ['당일치기 시즈오카·가마쿠라·가와고에', '신궁 외원 은행나무 길', '리쿠기엔 야간 단풍 (11/25~)'],
     weather: { high: 17, low: 9, sunset: '16:30', note: '해가 일찍 집니다. 야외 일정은 오전부터, 저녁은 야경·실내 위주.' },
     access: [
       '인천·김포 → 하네다(시내 30분) 또는 나리타(스카이라이너로 닛포리 약 40분).',
@@ -294,6 +294,7 @@ const REGIONS = [
     alerts: [
       { level: 'info', text: '리쿠기엔 "니와모미지 야간 특별 관람" 11/25(수)~12/6(일) 18:00~20:30.', from: '2026-11-25', to: '2026-12-06', link: ['도쿄도 공원협회', 'https://www.tokyo-park.or.jp/park/rikugien/news/2026/rikugiengardens.html'] },
       { level: 'info', text: '신궁 외원 은행나무 길은 예년 11월 중순~하순 절정. "이초 마츠리" 2026년 개최는 미발표.' },
+      { level: 'info', text: 'Day 3은 당일치기 코스(시즈오카·가마쿠라·가와고에)나 도쿄 시내 중에서 고를 수 있습니다. 주말·연휴에 가마쿠라는 특히 혼잡합니다.' },
     ],
     days: [
       { title: '도착 · 시부야', area: '시부야', items: [
@@ -315,7 +316,9 @@ const REGIONS = [
         { time: '17:00', category: 'TOUR', title: '도쿄도청 전망실 야경', desc: '무료 전망대', tip: { cautions: ['남·북 전망실 운영 일정 확인'], map: '東京都庁 展望室' } },
         { time: '18:30', category: 'FOOD', title: '오모이데 요코초 저녁', desc: '좁은 골목의 꼬치 노포', tip: { map: '思い出横丁' } },
       ] },
-      { title: '아사쿠사 · 우에노 · 정원 야경', area: '아사쿠사 / 우에노 / 고마고메', items: [
+      /* Day 3: 당일치기 코스 선택 (options 중 하나를 사용자가 고름) */
+      { defaultOption: 'shizuoka', options: [
+        { id: 'city', label: '도쿄 시내', emoji: '🏮', note: '당일치기 없이 시내', title: '아사쿠사 · 우에노 · 정원 야경', area: '아사쿠사 / 우에노 / 고마고메', items: [
         { time: '08:30', category: 'TOUR', title: '센소지', desc: '이른 아침 붐비기 전 참배', tip: { notes: ['경내는 상시 개방, 본당 개방 시간 별도'], map: '浅草寺' } },
         { time: '10:00', category: 'TOUR', title: '나카미세 거리', desc: '닌교야키·센베이 먹거리', tip: { map: '仲見世通り' } },
         { time: '11:30', category: 'FOOD', title: '아사쿠사 텐동 점심', desc: '', tip: { map: '浅草 天丼' } },
@@ -325,6 +328,61 @@ const REGIONS = [
           tip: { hours: '18:00~20:30 (입장 19:30까지)', notes: ['예매 1,000엔(온라인) · 당일 1,200엔', '기간 외라면 고이시카와 고라쿠엔 라이트업(11/13~24) 검토'], map: '六義園', links: [['공식 공지', 'https://www.tokyo-park.or.jp/park/rikugien/news/2026/rikugiengardens.html']], verified: true },
           window: { from: '2026-11-25', to: '2026-12-06', label: '야간 특별 관람' } },
         { time: '19:45', category: 'FOOD', title: '저녁', desc: '', tip: { map: '駒込駅' } },
+        ] },
+
+        { id: 'shizuoka', label: '시즈오카', emoji: '🗻', note: '신칸센 약 1시간', title: '당일치기 · 시즈오카 후지산 뷰', area: '니혼다이라 / 시미즈 / 미호', items: [
+          { time: '07:30', category: 'MOVE', title: '도쿄역 → 시즈오카역 (신칸센)', desc: '히카리 약 1시간 · 노조미는 시즈오카에 서지 않음',
+            tip: { notes: ['요금 자유석 5,940엔 / 지정석 6,470엔', '히카리는 시간당 1편 정도라 시간표 확인', '돌아올 때 자리가 걱정되면 고다마(약 1시간 20분)'], map: '静岡駅', verified: true } },
+          { time: '08:45', category: 'MOVE', title: '시즈오카역 → 니혼다이라', desc: '노선버스 또는 택시 약 30~40분',
+            tip: { cautions: ['버스 편수가 적어 시간표 확인 필수'], notes: ['니혼다이라·구노잔·시미즈·미호를 한 번에 돌려면 시즈오카역 렌터카가 가장 편함'], map: '日本平' } },
+          { time: '09:15', category: 'TOUR', title: '니혼다이라 유메테라스', desc: '구마 켄고가 설계한 전망 시설, 후지산과 스루가만 조망',
+            tip: { hours: '9:00~17:00 (토요일 ~21:00), 전망 회랑은 상시', closed: '둘째 주 화요일 (공휴일이면 다음 평일), 12/26~31', cautions: ['후지산은 맑은 오전에 잘 보임 — 구름 끼면 안 보일 수 있음', '휴관일은 자료가 오래되었을 수 있어 공식 확인'], map: '日本平夢テラス', links: [['공식', 'https://nihondaira-yume-terrace.jp/']], verified: true },
+            closedRanges: [{ from: '2026-11-10', to: '2026-11-10', label: '둘째 주 화요일 휴관' }] },
+          { time: '10:30', category: 'TOUR', title: '니혼다이라 로프웨이 → 구노잔 도쇼구', desc: '도쿠가와 이에야스를 모신 신사, 국보 사전',
+            tip: { cautions: ['로프웨이 운행·배관 시간 공식 확인', '돌아올 때도 로프웨이를 타야 니혼다이라로 복귀 (반대편은 1,159계단)'], map: '久能山東照宮' } },
+          { time: '12:30', category: 'FOOD', title: '시미즈항 참치덮밥', desc: '참치로 유명한 시미즈항의 수산 시장 "가시노이치"',
+            tip: { cautions: ['휴무일·영업시간 방문 전 확인'], map: '清水魚市場 河岸の市' } },
+          { time: '14:00', category: 'TOUR', title: '미호노마쓰바라', desc: '소나무 숲 너머 바다 위 후지산, 세계유산 구성 자산',
+            tip: { hours: '해변은 상시 개방 · 방문자 센터 "미호시루베" 9:00~16:30', notes: ['맑은 날, 공기가 깨끗한 시간대일수록 후지산이 선명'], map: '三保松原', verified: true } },
+          { time: '16:00', category: 'TOUR', title: '시즈오카역 기념품 · 녹차', desc: '시즈오카 녹차·와사비 절임·장어 파이',
+            tip: { cautions: ['면세 환급 방식 — 영수증 보관'], map: '静岡駅 お土産' } },
+          { time: '17:00', category: 'FOOD', title: '시즈오카 오뎅 이른 저녁', desc: '검은 국물에 가쓰오 가루를 뿌려 먹는 시즈오카식 오뎅',
+            tip: { notes: ['역 근처 아오바 요코초·오뎅 골목', '현지 체인 "사와야카" 햄버그는 시즈오카현에만 있어 인기 — 대기 매우 김'], map: '静岡おでん 青葉横丁' } },
+          { time: '18:30', category: 'MOVE', title: '시즈오카 → 도쿄', desc: '히카리 약 1시간 / 고다마 약 1시간 20분', tip: { map: '東京駅' } },
+        ] },
+
+        { id: 'kamakura', label: '가마쿠라', emoji: '⛩', note: 'JR 약 1시간', title: '당일치기 · 가마쿠라 & 에노시마', area: '기타카마쿠라 / 하세 / 에노시마', items: [
+          { time: '08:00', category: 'MOVE', title: '도쿄역 → 기타카마쿠라', desc: 'JR 요코스카선 약 1시간',
+            tip: { cautions: ['주말·연휴는 가마쿠라 전체가 매우 혼잡 — 이른 출발 권장'], map: '北鎌倉駅' } },
+          { time: '09:00', category: 'TOUR', title: '엔가쿠지', desc: '역 바로 앞 선종 대사찰, 늦가을 단풍', tip: { cautions: ['배관 시간·요금 현장 확인'], map: '円覚寺' } },
+          { time: '10:00', category: 'TOUR', title: '메이게츠인', desc: '둥근 창 너머 단풍으로 유명한 절',
+            tip: { notes: ['본당 뒤 정원은 단풍기 한정 공개(예년 11월 말~12/10경, 별도 요금) — 2026년 일정 미확인', '단풍 절정은 예년 11월 하순~12월 상순'], map: '明月院' } },
+          { time: '11:15', category: 'TOUR', title: '쓰루가오카 하치만구', desc: '가마쿠라의 상징 신사', tip: { map: '鶴岡八幡宮' } },
+          { time: '12:00', category: 'FOOD', title: '고마치도리 시라스동', desc: '잔멸치(시라스) 덮밥, 가마쿠라 명물', tip: { cautions: ['점심 피크는 대기'], map: '小町通り しらす丼' } },
+          { time: '13:30', category: 'TOUR', title: '고토쿠인 가마쿠라 대불', desc: '에노덴 하세역에서 도보 약 7분',
+            tip: { notes: ['근처 하세데라는 11/21~12/6 야간 단풍 라이트업 예정(자료마다 일정 차이) · 400엔'], map: '高徳院 鎌倉大仏', links: [['하세데라 공지', 'https://www.hasedera.jp/2026/10/23900/']] } },
+          { time: '14:45', category: 'TOUR', title: '가마쿠라코코마에 건널목', desc: '에노덴과 바다가 함께 보이는 애니메이션 명소',
+            tip: { cautions: ['차도·선로 위 촬영 금지, 주민 생활 공간 — 매너 지키기'], map: '鎌倉高校前駅' } },
+          { time: '15:30', category: 'TOUR', title: '에노시마 석양', desc: '맑으면 석양 속 후지산 실루엣',
+            tip: { notes: ['일몰 약 16:30', '일루미네이션 "쇼난의 보석"은 2026년 12/1 시작이라 11월에는 해당 없음'], map: '江の島' , verified: true } },
+          { time: '17:30', category: 'FOOD', title: '에노시마 해산물 저녁', desc: '시라스·사자에(소라) 구이', tip: { map: '江の島 しらす' } },
+          { time: '18:30', category: 'MOVE', title: '도쿄 복귀', desc: '후지사와에서 JR 약 50분 / 오다큐로 신주쿠', tip: { map: '藤沢駅' } },
+        ] },
+
+        { id: 'kawagoe', label: '가와고에', emoji: '🍠', note: '전철 약 30분', title: '당일치기 · 가와고에 "작은 에도"', area: '가와고에 / 고마고메', items: [
+          { time: '09:00', category: 'MOVE', title: '이케부쿠로 → 가와고에', desc: '도부 도조선 급행 약 30분', tip: { map: '川越駅' } },
+          { time: '09:45', category: 'TOUR', title: '기타인 · 오백나한', desc: '표정이 모두 다른 540여 개의 나한상',
+            tip: { hours: '대체로 9:00~16:00대 (11/24~ 단축, 자료마다 차이)', notes: ['국화 축제 11/1~11/23', '단풍은 예년 11월 하순~12월 상순'], map: '喜多院', verified: true } },
+          { time: '11:00', category: 'TOUR', title: '구라즈쿠리 거리 · 시간의 종', desc: '흙벽 창고 건물이 늘어선 에도풍 거리', tip: { cautions: ['보행로가 좁고 차가 다님 — 주의'], map: '時の鐘 川越' } },
+          { time: '12:00', category: 'FOOD', title: '가와고에 장어덮밥', desc: '가와고에 명물 우나주', tip: { cautions: ['인기점은 정리권·대기 — 오픈 직후 권장'], map: '川越 うなぎ' } },
+          { time: '13:30', category: 'TOUR', title: '가시야 요코초 · 고구마 간식', desc: '옛 과자 골목과 고구마 디저트', tip: { notes: ['가게 대부분 저녁 전 폐점'], map: '菓子屋横丁' } },
+          { time: '14:30', category: 'TOUR', title: '가와고에 히카와 신사', desc: '도미 모양 운세 뽑기(낚시)로 유명', tip: { map: '川越氷川神社' } },
+          { time: '16:00', category: 'MOVE', title: '도쿄 복귀 (고마고메 방면)', desc: '이케부쿠로 경유, 야마노테선 고마고메역', tip: { map: '駒込駅' } },
+          { time: '18:00', category: 'TOUR', title: '리쿠기엔 야간 단풍', desc: '돌아와서 조명 비친 다이묘 정원',
+            tip: { hours: '18:00~20:30 (입장 19:30까지)', notes: ['예매 1,000엔(온라인) · 당일 1,200엔'], map: '六義園', links: [['공식 공지', 'https://www.tokyo-park.or.jp/park/rikugien/news/2026/rikugiengardens.html']], verified: true },
+            window: { from: '2026-11-25', to: '2026-12-06', label: '야간 특별 관람' } },
+          { time: '19:45', category: 'FOOD', title: '저녁', desc: '', tip: { map: '駒込駅' } },
+        ] },
       ] },
       { title: '시장 아침 → 귀국', area: '쓰키지 / 긴자', items: [
         { time: '07:30', category: 'FOOD', title: '쓰키지 장외시장 아침', desc: '해산물 덮밥·계란말이',
@@ -393,4 +451,8 @@ const REGIONS = [
 ];
 
 /* id 부여 */
-REGIONS.forEach((r) => r.days.forEach((d, di) => d.items.forEach((it, ii) => { it.id = `${r.id}-${di + 1}-${ii}`; it.day = di + 1; })));
+REGIONS.forEach((r) => r.days.forEach((d, di) => {
+  const tag = (items, prefix) => items.forEach((it, ii) => { it.id = `${prefix}-${ii}`; it.day = di + 1; });
+  if (d.options) d.options.forEach((o) => tag(o.items, `${r.id}-${di + 1}-${o.id}`));
+  else tag(d.items, `${r.id}-${di + 1}`);
+}));

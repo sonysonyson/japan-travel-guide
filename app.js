@@ -5,7 +5,7 @@
     { id: 'mid', label: '중순', start: '2026-11-12' },
     { id: 'late', label: '하순', start: '2026-11-19' },
   ];
-  const DEFAULT_STATE = () => ({ startDate: '2026-11-19', done: {}, custom: {} });
+  const DEFAULT_STATE = () => ({ startDate: '2026-11-19', done: {}, custom: {}, dayOpt: {} });
   const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
   const NIGHTS = 3;
 
@@ -44,6 +44,14 @@
   const region = (id) => REGIONS.find((r) => r.id === id);
   const uid = () => `u${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
+  /* 일자 계획: 선택형(options) 일자는 사용자가 고른 코스, 없으면 기본 코스 */
+  function plan(r, day) {
+    const d = r.days[day - 1];
+    if (!d.options) return d;
+    return d.options.find((o) => o.id === state.dayOpt[`${r.id}-${day}`]) || d.options.find((o) => o.id === d.defaultOption);
+  }
+  const allItems = (r) => r.days.flatMap((d) => (d.options ? d.options.flatMap((o) => o.items) : d.items));
+
   /* 월령(대략값): 기준 신월 2000-01-06 18:14 UTC, 현지 20시 기준 */
   function moon(dateStr) {
     const [y, m, d] = dateStr.split('-').map(Number);
@@ -56,7 +64,7 @@
   }
 
   function itemsOf(r, day) {
-    const base = r.days[day - 1].items;
+    const base = plan(r, day).items;
     const mine = (state.custom[r.id] || []).filter((c) => c.day === day).map((c) => ({ ...c, mine: true }));
     return [...base, ...mine].sort((a, b) => a.time.localeCompare(b.time));
   }
@@ -147,7 +155,7 @@
   function renderDetail(r) {
     document.title = `${r.name} · 11월 일본 여행 가이드`;
     const day = ui.dayByRegion[r.id] || 1;
-    const all = r.days.flatMap((d) => d.items);
+    const all = r.days.flatMap((_, i) => plan(r, i + 1).items);
     const doneCnt = all.filter((it) => state.done[it.id]).length;
     const pct = Math.round((doneCnt / all.length) * 100);
 
@@ -174,13 +182,14 @@
               const date = dateOf(i + 1);
               const flagged = itemsOf(r, i + 1).some((it) => itemFlags(it, date).flags.some((f) => f.cls === 'warn'));
               return `<button class="day-tab ${day === i + 1 ? 'active' : ''}" role="tab" aria-selected="${day === i + 1}" data-day="${i + 1}">
-                <b>Day ${i + 1}${flagged ? '<span class="flag" title="확인 필요 항목 있음"></span>' : ''}</b><span>${mdw(date)} · ${esc(d.area)}</span></button>`;
+                <b>Day ${i + 1}${flagged ? '<span class="flag" title="확인 필요 항목 있음"></span>' : ''}</b><span>${mdw(date)} · ${esc(plan(r, i + 1).area)}</span></button>`;
             }).join('')}
           </nav>
           <div class="day-head">
-            <div><h2>${esc(r.days[day - 1].title)}</h2><p>${mdw(dateOf(day))} · ${esc(r.days[day - 1].area)}</p></div>
+            <div><h2>${esc(plan(r, day).title)}</h2><p>${mdw(dateOf(day))} · ${esc(plan(r, day).area)}</p></div>
             <a class="link-btn" href="${routeLink(r, day)}" target="_blank" rel="noopener">🗺 오늘 동선 구글 지도</a>
           </div>
+          ${optionPicker(r, day)}
           <ol class="timeline">${timelineHtml(r, day)}</ol>
         </section>
 
@@ -211,6 +220,20 @@
         </aside>
       </div>`;
     app.dataset.region = r.id;
+  }
+
+  function optionPicker(r, day) {
+    const d = r.days[day - 1];
+    if (!d.options) return '';
+    const cur = plan(r, day).id;
+    return `<div class="opt-pick c-${r.color}" role="radiogroup" aria-label="Day ${day} 코스 선택">
+      <p class="opt-pick-label">이 날 코스 선택 · 당일치기 소도시 또는 도쿄 시내</p>
+      <div class="opt-grid">${d.options.map((o) => `
+        <button class="opt ${o.id === cur ? 'active' : ''}" role="radio" aria-checked="${o.id === cur}" data-opt="${o.id}">
+          <span class="opt-emoji" aria-hidden="true">${o.emoji}</span><b>${esc(o.label)}</b><small>${esc(o.note)}</small>
+        </button>`).join('')}
+      </div>
+    </div>`;
   }
 
   function catPick() {
@@ -255,7 +278,7 @@
 
   function routeLink(r, day) {
     const qs = [];
-    r.days[day - 1].items.forEach((it) => { const q = it.tip && it.tip.map; if (q && q !== qs[qs.length - 1]) qs.push(q); });
+    plan(r, day).items.forEach((it) => { const q = it.tip && it.tip.map; if (q && q !== qs[qs.length - 1]) qs.push(q); });
     if (qs.length < 2) return GM(qs[0] || r.nameJa);
     const enc = encodeURIComponent;
     const mid = qs.slice(1, -1).slice(0, 9).map(enc).join('%7C');
@@ -314,7 +337,7 @@
       <div class="sum-region">
         <h4>${r.emoji} ${esc(r.name)} <span class="muted">${esc(r.sub)}</span><a href="#/r/${r.id}" data-close>상세 보기 →</a></h4>
         <div class="sum-days">${r.days.map((d, i) => `
-          <div class="sum-day"><b>Day ${i + 1} · ${mdw(dateOf(i + 1))}</b>
+          <div class="sum-day"><b>Day ${i + 1} · ${mdw(dateOf(i + 1))}${d.options ? ` · ${plan(r, i + 1).emoji} ${esc(plan(r, i + 1).label)}` : ''}</b>
             <ol>${itemsOf(r, i + 1).filter((it) => it.category !== 'MOVE').map((it) => `<li class="${state.done[it.id] ? 'done' : ''}">${it.time} ${esc(it.title)}</li>`).join('')}</ol>
           </div>`).join('')}
         </div>
@@ -343,6 +366,16 @@
     const preset = e.target.closest('[data-preset]');
     if (preset) { setStart(preset.dataset.preset); return; }
 
+    const opt = e.target.closest('[data-opt]');
+    if (opt) {
+      const r = region(app.dataset.region);
+      const day = ui.dayByRegion[r.id] || 1;
+      state.dayOpt[`${r.id}-${day}`] = opt.dataset.opt;
+      save(); renderDetail(r);
+      toast(`Day ${day} 코스: ${plan(r, day).label}`);
+      return;
+    }
+
     const tab = e.target.closest('.day-tab');
     if (tab) { ui.dayByRegion[app.dataset.region] = Number(tab.dataset.day); route(); return; }
 
@@ -355,7 +388,7 @@
     const r = region(app.dataset.region);
     const id = card.dataset.id;
     if (act.dataset.act === 'tip') {
-      openTip(r, r.days.flatMap((d) => d.items).find((x) => x.id === id));
+      openTip(r, allItems(r).find((x) => x.id === id));
     } else if (act.dataset.act === 'done') {
       if (act.checked) state.done[id] = true; else delete state.done[id];
       save(); renderDetail(r);
