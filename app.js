@@ -1,11 +1,11 @@
 /* 11월 일본 여행 가이드 - 라우팅 · 상태 · 렌더링 (Vanilla JS) */
 (() => {
-  const STORAGE_KEY = 'jp-nov-guide-v1';
+  const STORAGE_KEY = 'jp-nov-guide-v2';
   const PRESETS = [
     { id: 'mid', label: '중순', start: '2026-11-12' },
-    { id: 'late', label: '하순', start: '2026-11-19' },
+    { id: 'late', label: '하순', start: '2026-11-26' },
   ];
-  const DEFAULT_STATE = () => ({ startDate: '2026-11-19', done: {}, custom: {}, dayOpt: {} });
+  const DEFAULT_STATE = () => ({ startDate: '2026-11-26', done: {}, custom: {}, dayOpt: {} });
   const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
   const NIGHTS = 3;
 
@@ -59,12 +59,20 @@
     const age = (((t - Date.UTC(2000, 0, 6, 18, 14)) / 864e5) % 29.530588853 + 29.530588853) % 29.530588853;
     const names = [[1.8, '신월'], [6.5, '초승달'], [8.5, '상현달'], [13.8, '차오르는 달'], [15.8, '보름달'], [21.2, '기우는 달'], [23.1, '하현달'], [27.7, '그믐달'], [30, '신월']];
     const name = names.find(([lim]) => age < lim)[1];
-    const dark = age <= 2.5 || age >= 19;
+    const dark = age <= 5 || age >= 19;
     return { age: age.toFixed(1), name, dark };
   }
 
+  /* 날짜별 대체 일정(alts) 적용 */
+  function resolve(it, date) {
+    const alt = (it.alts || []).find((a) => date >= a.from && date <= a.to);
+    if (!alt) return it;
+    const { from, to, ...rest } = alt;
+    return { ...it, window: undefined, closedRanges: undefined, ...rest, id: it.id, day: it.day };
+  }
+
   function itemsOf(r, day) {
-    const base = plan(r, day).items;
+    const base = plan(r, day).items.map((it) => resolve(it, dateOf(day)));
     const mine = (state.custom[r.id] || []).filter((c) => c.day === day).map((c) => ({ ...c, mine: true }));
     return [...base, ...mine].sort((a, b) => a.time.localeCompare(b.time));
   }
@@ -143,6 +151,7 @@
       <p class="r-tag">${esc(r.tagline)}</p>
       <div class="r-meta">
         <span class="chip">🌡 ${r.weather.low}~${r.weather.high}℃</span>
+        <span class="chip">✈ ${r.flights.out.dep} 출발</span>
         ${events ? `<span class="chip event">✨ 기간 이벤트 ${events}</span>` : ''}
         ${warns ? `<span class="chip alert">⚠ 주의 ${warns}</span>` : ''}
         ${r.highlights.slice(0, 2).map((h) => `<span class="chip">${esc(h)}</span>`).join('')}
@@ -168,6 +177,8 @@
         <p>${esc(r.tagline)}</p>
         <div class="d-stats">
           <div class="d-stat"><span>여행 기간</span><b>${mdw(state.startDate)} ~ ${mdw(endDate())}</b></div>
+          <div class="d-stat"><span>출국 (인천)</span><b>${r.flights.out.dep} 출발</b></div>
+          <div class="d-stat"><span>귀국 (인천 도착)</span><b>${r.flights.back.arr}</b></div>
           <div class="d-stat"><span>11월 기온</span><b>${r.weather.low}~${r.weather.high}℃</b></div>
           <div class="d-stat"><span>일몰</span><b>약 ${r.weather.sunset}</b></div>
           <div class="d-stat"><span>체크 완료</span><b>${doneCnt}/${all.length}</b></div>
@@ -199,7 +210,25 @@
             <div class="notes" style="margin-top:0">${r.alerts.map(noteHtml).join('')}</div>
           </div>
           <div class="panel">
-            <h3>가는 법 · 이동 팁</h3>
+            <h3>추천 항공편 <span class="muted" style="font-weight:500">· 인천공항 기준</span></h3>
+            ${flightRow('출국', r.flights.out, '인천', r.flights.out.arr)}
+            ${flightRow('귀국', r.flights.back, r.flights.back.dep, `인천 ${r.flights.back.arr}`)}
+            <p class="muted">2026 동계 시간표 기준이 아닌 자료가 섞여 있어요. 예약 시 다시 확인하세요. 귀국 후 공항버스 6101(마들역) 막차 21:10.</p>
+          </div>
+          <div class="panel">
+            <h3>추천 숙소 위치</h3>
+            <div class="stays">${r.stays.map((st) => `
+              <div class="stay">
+                <span class="stay-n">${esc(st.nights)}</span>
+                <b>${esc(st.area)}</b>
+                <p>${esc(st.why)}</p>
+                ${st.tips && st.tips.length ? `<ul>${st.tips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+                <a class="link-btn" href="${GM(st.map)}" target="_blank" rel="noopener">숙소 지도 ↗</a>
+              </div>`).join('')}
+            </div>
+          </div>
+          <div class="panel">
+            <h3>현지 이동 팁</h3>
             <ul>${r.access.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
           </div>
           <div class="panel">
@@ -233,6 +262,14 @@
           <span class="opt-emoji" aria-hidden="true">${o.emoji}</span><b>${esc(o.label)}</b><small>${esc(o.note)}</small>
         </button>`).join('')}
       </div>
+    </div>`;
+  }
+
+  function flightRow(label, f, dep, arr) {
+    return `<div class="flight">
+      <span class="f-label">${label}</span>
+      <div class="f-main"><b>${esc(f.airline)} ${esc(f.code)}</b><span>${label === '출국' ? `인천 ${f.dep} → 현지 ${f.arr}` : `현지 ${f.dep} → ${esc(arr)}`}</span></div>
+      ${f.verified ? '<span class="tag ok">✓ 확인</span>' : '<span class="tag" style="--cat:var(--text-3)">예시</span>'}
     </div>`;
   }
 
@@ -278,7 +315,7 @@
 
   function routeLink(r, day) {
     const qs = [];
-    plan(r, day).items.forEach((it) => { const q = it.tip && it.tip.map; if (q && q !== qs[qs.length - 1]) qs.push(q); });
+    itemsOf(r, day).filter((it) => !it.mine).forEach((it) => { const q = it.tip && it.tip.map; if (q && q !== qs[qs.length - 1]) qs.push(q); });
     if (qs.length < 2) return GM(qs[0] || r.nameJa);
     const enc = encodeURIComponent;
     const mid = qs.slice(1, -1).slice(0, 9).map(enc).join('%7C');
@@ -388,7 +425,8 @@
     const r = region(app.dataset.region);
     const id = card.dataset.id;
     if (act.dataset.act === 'tip') {
-      openTip(r, allItems(r).find((x) => x.id === id));
+      const raw = allItems(r).find((x) => x.id === id);
+      openTip(r, resolve(raw, dateOf(raw.day)));
     } else if (act.dataset.act === 'done') {
       if (act.checked) state.done[id] = true; else delete state.done[id];
       save(); renderDetail(r);
