@@ -14,7 +14,9 @@ Claude가 새 세션에서 이어 작업할 때 읽는 프로젝트 기억 파�
 
 ## 구조
 - `index.html` 셸 (상단바, #app, 레이어, 토스트) — 기본 라이트 테마, 🌙 버튼으로 다크 전환 (`jp-nov-theme`)
-- `app.js` 해시 라우팅(`#/`, `#/r/{id}`), 상태 `jp-nov-guide-v2` = { startDate, done, custom, dayOpt }
+- `app.js` 해시 라우팅(`#/`, `#/r/{id}`), 상태 `jp-nov-guide-v2` = { startDate, done, custom, dayOpt, edits, hidden }
+  - 일정 수정·삭제: 기본 일정은 원본 유지, state.edits[id](time/title/category/desc/memo/tip, tipRemoved)로 덮어쓰기, 삭제는 state.hidden[id] (복원 가능). 내 일정은 custom 레코드 직접 수정
+  - TIP 팝업 하단 "TIP 수정/삭제", TIP 삭제 시 카드에 "+ TIP"
   - 날짜 기반 자동 경고: `closedDays`(요일 휴무), `closedRanges`, `window`(기간 한정), `night`(월령 계산)
   - 알림 `alerts[].from/to`가 여행 기간과 겹치면 강조
 - `data.js` REGIONS 6개, 각 4일, item.tip { hours, closed, cautions, notes, map(구글 지도 검색어), links, verified }

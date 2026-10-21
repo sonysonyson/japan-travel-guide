@@ -5,7 +5,7 @@
     { id: 'mid', label: '중순', start: '2026-11-12' },
     { id: 'late', label: '하순', start: '2026-11-26' },
   ];
-  const DEFAULT_STATE = () => ({ startDate: '2026-11-26', done: {}, custom: {}, dayOpt: {} });
+  const DEFAULT_STATE = () => ({ startDate: '2026-11-26', done: {}, custom: {}, dayOpt: {}, edits: {}, hidden: {} });
   const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
   const NIGHTS = 3;
 
@@ -50,7 +50,6 @@
     if (!d.options) return d;
     return d.options.find((o) => o.id === state.dayOpt[`${r.id}-${day}`]) || d.options.find((o) => o.id === d.defaultOption);
   }
-  const allItems = (r) => r.days.flatMap((d) => (d.options ? d.options.flatMap((o) => o.items) : d.items));
 
   /* 월령(대략값): 기준 신월 2000-01-06 18:14 UTC, 현지 20시 기준 */
   function moon(dateStr) {
@@ -71,8 +70,21 @@
     return { ...it, window: undefined, closedRanges: undefined, ...rest, id: it.id, day: it.day };
   }
 
+  /* 사용자 수정 적용: 기본 일정 원본은 두고 state.edits로 덮어쓴다 */
+  const EDIT_KEYS = ['time', 'title', 'category', 'desc', 'memo'];
+  function applyEdit(it) {
+    const e = state.edits[it.id];
+    if (!e) return it;
+    const out = { ...it, edited: true };
+    EDIT_KEYS.forEach((k) => { if (k in e) out[k] = e[k]; });
+    if (e.tipRemoved) out.tip = null;
+    else if (e.tip) out.tip = { ...(it.tip || {}), ...e.tip, verified: false, userEdited: true };
+    return out;
+  }
+  const hiddenOf = (r, day) => plan(r, day).items.filter((it) => state.hidden[it.id]);
+
   function itemsOf(r, day) {
-    const base = plan(r, day).items.map((it) => resolve(it, dateOf(day)));
+    const base = plan(r, day).items.filter((it) => !state.hidden[it.id]).map((it) => applyEdit(resolve(it, dateOf(day))));
     const mine = (state.custom[r.id] || []).filter((c) => c.day === day).map((c) => ({ ...c, mine: true }));
     return [...base, ...mine].sort((a, b) => a.time.localeCompare(b.time));
   }
@@ -164,7 +176,7 @@
   function renderDetail(r) {
     document.title = `${r.name} · 11월 일본 여행 가이드`;
     const day = ui.dayByRegion[r.id] || 1;
-    const all = r.days.flatMap((_, i) => plan(r, i + 1).items);
+    const all = r.days.flatMap((_, i) => itemsOf(r, i + 1));
     const doneCnt = all.filter((it) => state.done[it.id]).length;
     const pct = Math.round((doneCnt / all.length) * 100);
 
@@ -198,7 +210,10 @@
           </nav>
           <div class="day-head">
             <div><h2>${esc(plan(r, day).title)}</h2><p>${mdw(dateOf(day))} · ${esc(plan(r, day).area)}</p></div>
-            <a class="link-btn" href="${routeLink(r, day)}" target="_blank" rel="noopener">🗺 오늘 동선 구글 지도</a>
+            <div class="day-head-actions">
+              ${hiddenOf(r, day).length ? `<button class="link-btn" id="btnHidden">삭제한 일정 ${hiddenOf(r, day).length}개 · 복원</button>` : ''}
+              <a class="link-btn" href="${routeLink(r, day)}" target="_blank" rel="noopener">🗺 오늘 동선 구글 지도</a>
+            </div>
           </div>
           ${optionPicker(r, day)}
           <ol class="timeline">${timelineHtml(r, day)}</ol>
@@ -296,6 +311,7 @@
               <div class="tags">
                 <span class="tag">${c.icon} ${c.label}</span>
                 ${it.mine ? '<span class="tag mine">내 일정</span>' : ''}
+                ${it.edited ? '<span class="tag mine">수정됨</span>' : ''}
                 ${flags.map((f) => `<span class="tag ${f.cls}">${esc(f.text)}</span>`).join('')}
               </div>
               <h4>${esc(it.title)}</h4>
@@ -305,9 +321,13 @@
             <input type="checkbox" class="check" data-act="done" ${done ? 'checked' : ''} aria-label="다녀옴 체크">
           </div>
           <div class="card-actions">
-            ${it.mine
-              ? `<a class="link-btn" href="${GM(it.title)}" target="_blank" rel="noopener">지도</a><button class="link-btn" data-act="del">삭제</button>`
-              : `<button class="tip-btn" data-act="tip">TIP</button><a class="link-btn" href="${GM(it.tip.map || it.title)}" target="_blank" rel="noopener">지도 ↗</a>`}
+            ${it.tip
+              ? '<button class="tip-btn" data-act="tip">TIP</button>'
+              : '<button class="link-btn" data-act="edit" data-focus="tip">+ TIP</button>'}
+            <a class="link-btn" href="${GM((it.tip && it.tip.map) || it.title)}" target="_blank" rel="noopener">지도 ↗</a>
+            <span class="grow"></span>
+            <button class="link-btn" data-act="edit">수정</button>
+            <button class="link-btn danger" data-act="del">삭제</button>
           </div>
         </article>
       </li>`;
@@ -367,7 +387,107 @@
         <a class="btn primary" href="${GM(tip.map || it.title)}" target="_blank" rel="noopener">구글 지도에서 보기 ↗</a>
         ${(tip.links || []).map(([l, u]) => `<a class="btn line" href="${u}" target="_blank" rel="noopener">${esc(l)} ↗</a>`).join('')}
       </div>
-      <div class="verify ${tip.verified ? 'verify-ok' : 'verify-todo'}">${tip.verified ? `✓ ${CHECKED_AT} 기준 웹 검색으로 확인한 정보입니다.` : 'ⓘ 영업시간·휴무는 방문 전 공식 정보를 확인하세요.'}</div>`);
+      <div class="verify ${tip.verified ? 'verify-ok' : 'verify-todo'}">${tip.verified ? `✓ ${CHECKED_AT} 기준 웹 검색으로 확인한 정보입니다.` : tip.userEdited ? '✎ 직접 수정한 내용이 포함되어 있습니다.' : 'ⓘ 영업시간·휴무는 방문 전 공식 정보를 확인하세요.'}</div>
+      <div class="tip-manage">
+        <button class="btn line" data-tip-edit>✎ TIP 수정</button>
+        <button class="btn line danger" data-tip-del>TIP 삭제</button>
+      </div>`);
+    ui.ctx = { rid: r.id, id: it.id };
+  }
+
+  /* ───────── 일정·TIP 수정 ───────── */
+  const lines = (v) => v.split('\n').map((x) => x.trim()).filter(Boolean);
+  const findItem = (r, id) => itemsOf(r, ui.dayByRegion[r.id] || 1).find((x) => x.id === id);
+  const customRec = (r, id) => (state.custom[r.id] || []).find((c) => c.id === id);
+
+  function openEditor(r, it, focusTip) {
+    ui.ctx = { rid: r.id, id: it.id };
+    ui.editCat = it.category;
+    const tip = it.tip || {};
+    const ta = (id, label, val, hint) => `<div class="field"><label for="${id}">${label}${hint ? ` <span class="muted">· ${hint}</span>` : ''}</label><textarea id="${id}" rows="3">${esc((val || []).join('\n'))}</textarea></div>`;
+    const inp = (id, label, val, ph) => `<div class="field"><label for="${id}">${label}</label><input type="text" id="${id}" value="${esc(val || '')}" placeholder="${esc(ph || '')}"></div>`;
+    openLayer(it.mine ? '내 일정 수정' : '일정 수정', `
+      <form id="editForm" novalidate>
+        <div class="edit-grid">
+          <div class="field"><label for="eTime">시간</label><input type="time" id="eTime" value="${it.time}"></div>
+          <div class="field"><label for="eTitle">장소/활동명</label><input type="text" id="eTitle" maxlength="60" value="${esc(it.title)}">
+            <p class="err hidden" id="eErr">장소/활동명을 입력해 주세요.</p></div>
+        </div>
+        <div class="field"><label>카테고리</label><div class="cat-pick" id="eCat">${editCatPick()}</div></div>
+        ${inp('eDesc', '한 줄 소개', it.desc, '예) 오션뷰 카페')}
+        ${ta('eMemo', '할 수 있는 것', it.memo, '한 줄에 하나씩')}
+        <fieldset class="edit-tip" id="eTipSet">
+          <legend>TIP 정보</legend>
+          ${inp('eHours', '영업 시간', tip.hours, '예) 10:00~18:00')}
+          ${inp('eClosed', '휴무일', tip.closed, '예) 수요일')}
+          ${ta('eCautions', '주의할 점', tip.cautions, '한 줄에 하나씩')}
+          ${ta('eNotes', '참고하면 좋은 점', tip.notes, '한 줄에 하나씩')}
+          ${inp('eMap', '구글 지도 검색어', tip.map, '예) 万座毛')}
+        </fieldset>
+        <div class="edit-actions">
+          ${it.edited ? '<button type="button" class="btn ghost" data-edit-reset>원래대로</button>' : ''}
+          <span class="grow"></span>
+          <button type="button" class="btn ghost" data-edit-cancel>취소</button>
+          <button type="submit" class="btn primary">저장</button>
+        </div>
+      </form>`);
+    if (focusTip) { $('#eTipSet').scrollIntoView({ block: 'start' }); $('#eHours').focus(); }
+    else $('#eTitle').focus();
+  }
+
+  function editCatPick() {
+    return Object.entries(CATEGORIES).map(([k, c]) =>
+      `<button type="button" class="cat-${k} ${ui.editCat === k ? 'active' : ''}" data-ecat="${k}">${c.icon} ${c.label}</button>`).join('');
+  }
+
+  function saveEditor() {
+    const title = $('#eTitle').value.trim();
+    if (!title) { $('#eErr').classList.remove('hidden'); $('#eTitle').classList.add('invalid'); $('#eTitle').focus(); return; }
+    const r = region(ui.ctx.rid);
+    const tip = { hours: $('#eHours').value.trim(), closed: $('#eClosed').value.trim(), cautions: lines($('#eCautions').value), notes: lines($('#eNotes').value), map: $('#eMap').value.trim() };
+    const tipEmpty = !tip.hours && !tip.closed && !tip.cautions.length && !tip.notes.length && !tip.map;
+    const data = { time: $('#eTime').value || '12:00', title, category: ui.editCat, desc: $('#eDesc').value.trim(), memo: lines($('#eMemo').value) };
+    const rec = customRec(r, ui.ctx.id);
+    if (rec) {
+      Object.assign(rec, data, { tip: tipEmpty ? null : tip });
+    } else {
+      const prev = state.edits[ui.ctx.id] || {};
+      state.edits[ui.ctx.id] = { ...data, tip, tipRemoved: !!prev.tipRemoved && tipEmpty };
+    }
+    save(); closeLayer(); renderDetail(r); toast(`"${title}" 수정 완료`);
+  }
+
+  function removeTip() {
+    const r = region(ui.ctx.rid);
+    if (!confirm('이 일정의 TIP 정보를 삭제할까요? (일정은 유지됩니다)')) return;
+    const rec = customRec(r, ui.ctx.id);
+    if (rec) rec.tip = null;
+    else state.edits[ui.ctx.id] = { ...(state.edits[ui.ctx.id] || {}), tipRemoved: true };
+    save(); closeLayer(); renderDetail(r); toast('TIP을 삭제했습니다. 카드의 "+ TIP"으로 다시 추가할 수 있어요.');
+  }
+
+  function deleteItem(r, id) {
+    const rec = customRec(r, id);
+    if (rec) {
+      state.custom[r.id] = state.custom[r.id].filter((c) => c !== rec);
+      save(); renderDetail(r);
+      toast(`"${rec.title}" 삭제`, { label: '되돌리기', run: () => { state.custom[r.id].push(rec); save(); renderDetail(r); } });
+    } else {
+      const it = findItem(r, id);
+      state.hidden[id] = true;
+      save(); renderDetail(r);
+      toast(`"${it.title}" 삭제`, { label: '되돌리기', run: () => { delete state.hidden[id]; save(); renderDetail(r); } });
+    }
+  }
+
+  function openHidden(r) {
+    const day = ui.dayByRegion[r.id] || 1;
+    ui.ctx = { rid: r.id };
+    openLayer(`Day ${day} 삭제한 일정`, `
+      <ul class="hidden-list">${hiddenOf(r, day).map((it) => { const x = applyEdit(resolve(it, dateOf(day))); return `
+        <li><span>${x.time} · ${esc(x.title)}</span><button class="btn line" data-restore="${it.id}">복원</button></li>`; }).join('')}
+      </ul>
+      <div class="edit-actions"><span class="grow"></span><button class="btn primary" data-restore-all>모두 복원</button></div>`);
   }
 
   function openSummary() {
@@ -386,12 +506,14 @@
 
   /* ───────── 토스트 ───────── */
   let toastTimer;
-  function toast(msg) {
+  function toast(msg, action) {
     const el = $('#toast');
-    el.textContent = msg;
+    el.innerHTML = esc(msg) + (action ? ` <button class="toast-act">${esc(action.label)}</button>` : '');
+    el.style.pointerEvents = action ? 'auto' : 'none';
     el.classList.add('show');
+    if (action) el.querySelector('.toast-act').onclick = () => { el.classList.remove('show'); action.run(); };
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+    toastTimer = setTimeout(() => el.classList.remove('show'), action ? 5000 : 2000);
   }
 
   /* ───────── 이벤트 ───────── */
@@ -419,6 +541,8 @@
     const tab = e.target.closest('.day-tab');
     if (tab) { ui.dayByRegion[app.dataset.region] = Number(tab.dataset.day); route(); return; }
 
+    if (e.target.closest('#btnHidden')) { openHidden(region(app.dataset.region)); return; }
+
     const cat = e.target.closest('#fCat [data-cat]');
     if (cat) { ui.formCat = cat.dataset.cat; $('#fCat').innerHTML = catPick(); return; }
 
@@ -428,15 +552,14 @@
     const r = region(app.dataset.region);
     const id = card.dataset.id;
     if (act.dataset.act === 'tip') {
-      const raw = allItems(r).find((x) => x.id === id);
-      openTip(r, resolve(raw, dateOf(raw.day)));
+      openTip(r, findItem(r, id));
+    } else if (act.dataset.act === 'edit') {
+      openEditor(r, findItem(r, id), act.dataset.focus === 'tip');
     } else if (act.dataset.act === 'done') {
       if (act.checked) state.done[id] = true; else delete state.done[id];
       save(); renderDetail(r);
     } else if (act.dataset.act === 'del') {
-      state.custom[r.id] = (state.custom[r.id] || []).filter((c) => c.id !== id);
-      delete state.done[id];
-      save(); renderDetail(r); toast('내 일정을 삭제했습니다.');
+      deleteItem(r, id);
     }
   });
 
@@ -467,7 +590,37 @@
     save(); route(); toast('기본 샘플 데이터로 초기화했습니다.');
   });
   $('#layerClose').addEventListener('click', closeLayer);
-  $('#layer').addEventListener('click', (e) => { if (e.target.id === 'layer' || e.target.closest('[data-close]')) closeLayer(); });
+  $('#layer').addEventListener('click', (e) => {
+    if (e.target.id === 'layer' || e.target.closest('[data-close]')) { closeLayer(); return; }
+    const r = ui.ctx && region(ui.ctx.rid);
+    const ecat = e.target.closest('[data-ecat]');
+    if (ecat) { ui.editCat = ecat.dataset.ecat; $('#eCat').innerHTML = editCatPick(); return; }
+    if (e.target.closest('[data-edit-cancel]')) { closeLayer(); return; }
+    if (e.target.closest('[data-edit-reset]')) {
+      if (!confirm('수정한 내용을 지우고 원래 일정으로 되돌릴까요?')) return;
+      delete state.edits[ui.ctx.id];
+      save(); closeLayer(); renderDetail(r); toast('원래 일정으로 되돌렸습니다.');
+      return;
+    }
+    if (e.target.closest('[data-tip-edit]')) { openEditor(r, findItem(r, ui.ctx.id), true); return; }
+    if (e.target.closest('[data-tip-del]')) { removeTip(); return; }
+    const one = e.target.closest('[data-restore]');
+    if (one || e.target.closest('[data-restore-all]')) {
+      const day = ui.dayByRegion[r.id] || 1;
+      (one ? [one.dataset.restore] : hiddenOf(r, day).map((it) => it.id)).forEach((id) => delete state.hidden[id]);
+      save(); renderDetail(r);
+      if (hiddenOf(r, day).length) openHidden(r); else closeLayer();
+      toast('일정을 복원했습니다.');
+    }
+  });
+  $('#layer').addEventListener('submit', (e) => {
+    if (e.target.id !== 'editForm') return;
+    e.preventDefault();
+    saveEditor();
+  });
+  $('#layer').addEventListener('input', (e) => {
+    if (e.target.id === 'eTitle' && e.target.value.trim()) { $('#eErr').classList.add('hidden'); e.target.classList.remove('invalid'); }
+  });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#layer').classList.contains('hidden')) closeLayer(); });
 
   function syncThemeIcon() {

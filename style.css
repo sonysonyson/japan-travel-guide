@@ -77,7 +77,7 @@ body {
   min-height: 100vh;
 }
 a { color: inherit; }
-button, input { font: inherit; color: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 .hidden { display: none !important; }
 .wrap { max-width: 1180px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
@@ -287,6 +287,26 @@ button { cursor: pointer; }
 .stay ul { margin: 6px 0 8px; padding-left: 16px; font-size: 12.5px; }
 .stay .link-btn { margin-top: 4px; background: var(--surface); }
 
+/* Edit / delete */
+.card-actions .grow { flex: 1; }
+.link-btn.danger:hover { color: #c0392b; border-color: #e3a49a; }
+.btn.line.danger { color: #c0392b; }
+.btn.line.danger:hover { border-color: #e3a49a; }
+.day-head-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.tip-manage { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.edit-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; }
+#editForm input[type="text"], #editForm input[type="time"], #editForm textarea { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 9px 11px; outline: none; font-size: 14px; }
+#editForm textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+#editForm input:focus, #editForm textarea:focus { border-color: var(--accent); }
+#editForm input.invalid { border-color: var(--warn); }
+.edit-tip { border: 1px solid var(--line); border-radius: 16px; padding: 10px 14px 4px; margin: 6px 0 0; scroll-margin-top: 8px; }
+.edit-tip legend { font-size: 12.5px; font-weight: 800; color: var(--accent); padding: 0 6px; }
+.edit-actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+.edit-actions .grow { flex: 1; }
+.hidden-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hidden-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+.toast-act { margin-left: 10px; border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 8px; padding: 4px 10px; font-weight: 700; font-size: 12.5px; }
+
 /* Layer popup */
 .layer { position: fixed; inset: 0; z-index: 50; background: rgba(30, 22, 18, .42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; animation: fade .18s ease; }
 .layer-card { width: min(560px, 100%); max-height: 86vh; background: var(--surface); border-radius: 26px; display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.25); animation: pop .22s cubic-bezier(.2,.9,.3,1.2); }
@@ -347,6 +367,7 @@ button { cursor: pointer; }
   .day-tab { min-width: 112px; padding: 9px 12px; }
   .sum-days { grid-template-columns: 1fr; }
   .opt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .edit-grid { grid-template-columns: 1fr; gap: 0; }
   .layer { place-items: end center; padding: 0; }
   .layer-card { width: 100%; border-radius: 24px 24px 0 0; max-height: 90vh; }
 }
