@@ -14,7 +14,7 @@ Claude가 새 세션에서 이어 작업할 때 읽는 프로젝트 기억 파�
 
 ## 구조
 - `index.html` 셸 (상단바, #app, 레이어, 토스트) — 기본 라이트 테마, 🌙 버튼으로 다크 전환 (`jp-nov-theme`)
-- `app.js` 해시 라우팅(`#/`, `#/r/{id}`), 상태 `jp-nov-guide-v1` = { startDate, done, custom }
+- `app.js` 해시 라우팅(`#/`, `#/r/{id}`), 상태 `jp-nov-guide-v1` = { startDate, done, custom, dayOpt }
   - 날짜 기반 자동 경고: `closedDays`(요일 휴무), `closedRanges`, `window`(기간 한정), `night`(월령 계산)
   - 알림 `alerts[].from/to`가 여행 기간과 겹치면 강조
 - `data.js` REGIONS 6개, 각 4일, item.tip { hours, closed, cautions, notes, map(구글 지도 검색어), links, verified }
@@ -40,7 +40,7 @@ Claude가 새 세션에서 이어 작업할 때 읽는 프로젝트 기억 파�
 - 가와고에: 기타인 국화 축제 11/1~11/23, 단풍 11월 하순~12월 상순
 
 ## 남은 할 일
-- [ ] GitHub 저장소 `japan-travel-guide`는 사용자가 생성함(2026-10-21) → remote 연결·푸시는 사용자가 진행 중, Pages: main / (root)
+- [ ] GitHub 저장소 `japan-travel-guide`는 사용자가 생성함(2026-10-21) → origin이 `japn-travel-guide`(a 누락)로 연결되어 있음 — 실제 저장소 이름 확인 필요, Pages: main / (root)
 - [ ] `code_artifact.md`를 저장소에 포함할지 결정 (현재 .gitignore 제외)
 - [ ] 사용자 검토 의견 반영
 
